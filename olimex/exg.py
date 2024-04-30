@@ -29,6 +29,7 @@ shield packet is organized are below::
       uint8_t	switches;	// State of PD5 to PD2, in bits 3 to 0.
     };
 """
+
 import time
 
 from olimex.constants import PACKET_SIZE, PACKET_SLICES, SAMPLE_FREQUENCY, SYNC0, SYNC1
@@ -46,6 +47,7 @@ class PacketStreamReader:
         reader = PacketStreamReader(serial)
         packet = next(reader)
     """
+
     def __init__(self, serial):
         self._serial = serial
         # data members for tracking performance
@@ -82,7 +84,7 @@ class PacketStreamReader:
         if packet is None:
             return None
         self._packet_index += 1
-        data = packet[PACKET_SLICES['data']]
+        data = packet[PACKET_SLICES["data"]]
         return calculate_values_from_packet_data(data)
 
     @property
@@ -100,14 +102,13 @@ class PacketStreamReader:
 
         if values is None:
             self.ret_none_count += 1
-            if self.ret_none_count >= 1000:
-                raise StopIteration
+            # if self.ret_none_count >= 1000:
+            # raise StopIteration
         else:
             self.ret_none_count = 0
- 
+
         return values
 
     def __del__(self):
         if self._serial:
             self._serial.close()
-
