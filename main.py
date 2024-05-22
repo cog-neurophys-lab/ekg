@@ -128,7 +128,7 @@ def on_start(event):
     global serial_port
     global reader
     global animation
-    print("started")
+    print(f"{datetime.now()}: Started data acqusition")
     serial_port = serial.Serial(port, baud_rate)
     reader = PacketStreamReader(serial_port)
     animation.resume()
@@ -138,7 +138,7 @@ def on_stop(event):
     global serial_port
     global reader
     global animation
-    print("stopped")
+    print(f"{datetime.now()}: Stopped data acquisition")
     animation.pause()
     serial_port = None
     reader = None
@@ -186,10 +186,13 @@ def on_save(event):
                                             ('All Files', '*.*')])
     if filename is not None or filename != "":
         pyplot.savefig(filename)
+        print(f"{datetime.now()}: Saved figure as {filename}")
 
 save_button_axes = pyplot.axes((0.7, 0.05, 0.08, 0.075))
 save_button = pyplot.Button(save_button_axes, "Save figure")
 save_button.on_clicked(on_save)
+
+print(f"{datetime.now()}: Started EKG")
 
 
 
