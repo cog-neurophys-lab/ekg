@@ -1,11 +1,13 @@
 from datetime import datetime
 from matplotlib import pyplot
-from matplotlib.widgets import TextBox
+from matplotlib.widgets import TextBox, CheckButtons
 from matplotlib.animation import FuncAnimation
 import numpy as np
 from olimex.exg import PacketStreamReader
 import scipy.signal
 import serial
+from tkinter.filedialog import asksaveasfilename
+
 
 # set tk backend for matplotlib
 pyplot.switch_backend("TkAgg")
@@ -31,9 +33,10 @@ def get_new_data_points(packet_reader: PacketStreamReader):
 
             if channel_values:
                 channel_1, *_ = channel_values
-                nDataPoints += 1
                 # new_data.append(channel_1)
                 new_data[nDataPoints] = channel_1
+                nDataPoints += 1
+
 
         yield new_data[:nDataPoints]
 
@@ -84,7 +87,8 @@ ax.grid(True, which="major", color="k", linestyle="-")
 ax.grid(True, which="minor", color="k", linestyle="--")
 ax.set_xticks(np.arange(0, T, 0.1), minor=True)
 
-title = ax.set_title("ECG:")
+timestamp = datetime.now()
+title = ax.set_title(f"EKG: {timestamp}")
 
 nFrames = 0
 
@@ -93,6 +97,7 @@ def update(frame):
     global y_data
     global reader
     global nFrames
+    global timestamp
     # nFrames += 1
 
     if reader is None:
@@ -105,10 +110,16 @@ def update(frame):
     new_data -= 512
 
     y_data = np.roll(y_data, -len(new_data))
-    y_data = notch_filter(y_data, sampling_rate)
 
+    # if check_buttons.get_status()[1]:
+        # y_data = lowpass_filter(y_data, sampling_rate)
+
+    if check_buttons.get_status()[0]:
+        y_data = notch_filter(y_data, sampling_rate)
+
+    timestamp = datetime.now()
     y_data[-len(new_data) :] = new_data
-    title.set_text(f"ECG: {datetime.now()}, n={len(new_data)}")
+    title.set_text(f"EKG: {timestamp}")
     line.set_ydata(y_data)
     return (line,)
 
@@ -152,11 +163,34 @@ def on_submit_callback(text):
     global port
     port = text
 
-
 port_slider_axes = pyplot.axes((0.1, 0.05, 0.025, 0.025))
 port_text_box = TextBox(
     port_slider_axes, "COM Port  ", initial=port, textalignment="center"
 )
 port_text_box.on_submit(on_submit_callback)
+
+
+# add CheckButtons to select filters
+filters = ["50 Hz notch"]
+check_axes = pyplot.axes((0.15, 0.05, 0.08, 0.025))
+check_buttons = CheckButtons(check_axes, filters, [True, False])
+
+# add button to save as pdf
+def on_save(event):
+    filename = "ekg_" + timestamp.strftime("%Y%m%d%H%M%S") + ".pdf"
+
+    filename = asksaveasfilename(title="Pick filename for saving", 
+                                 defaultextension=".pdf", initialfile=filename, 
+                                 filetypes=[('PDF Files', '*.pdf'), 
+                                            ('PNG Files', '*.png'),
+                                            ('All Files', '*.*')])
+    if filename is not None or filename != "":
+        pyplot.savefig(filename)
+
+save_button_axes = pyplot.axes((0.7, 0.05, 0.08, 0.075))
+save_button = pyplot.Button(save_button_axes, "Save figure")
+save_button.on_clicked(on_save)
+
+
 
 pyplot.show()
