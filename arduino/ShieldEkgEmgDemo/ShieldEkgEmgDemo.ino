@@ -140,7 +140,7 @@ void setup() {
  FlexiTimer2::start();
  
  // Serial Port
- Serial.begin(57600);
+ Serial.begin(115200);
  //Set speed to 57600 bps
  
  // MCU sleep mode = idle.
