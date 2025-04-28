@@ -1,4 +1,5 @@
 import sys
+from matplotlib import axis
 import numpy as np
 from datetime import datetime
 from PySide6.QtWidgets import (
@@ -8,11 +9,13 @@ from PySide6.QtWidgets import (
     QPushButton,
     QCheckBox,
     QLineEdit,
+    QLabel,
     QFileDialog,
     QWidget,
 )
 from PySide6.QtCore import QTimer
 import pyqtgraph as pg
+
 from pyqtgraph import PlotWidget, mkPen
 from olimex.exg import PacketStreamReader
 import scipy.signal
@@ -80,6 +83,31 @@ class ECGApp(QMainWindow):
         self.subject_input.textChanged.connect(self.update_subject)
         self.layout.addWidget(self.subject_input)
 
+        # Add sliders for x limits and y limits
+        axis_layout = QHBoxLayout()
+
+        self.x_min_slider = QLineEdit("2")
+        self.x_min_slider.setPlaceholderText("X Min")
+        self.x_min_slider.textChanged.connect(self.update_x_limits)
+        axis_layout.addWidget(self.x_min_slider)
+
+        self.x_max_slider = QLineEdit("7")
+        self.x_max_slider.setPlaceholderText("X Max")
+        self.x_max_slider.textChanged.connect(self.update_x_limits)
+        axis_layout.addWidget(self.x_max_slider)
+
+        self.y_min_slider = QLineEdit("-500")
+        self.y_min_slider.setPlaceholderText("Y Min")
+        self.y_min_slider.textChanged.connect(self.update_y_limits)
+        axis_layout.addWidget(self.y_min_slider)
+
+        self.y_max_slider = QLineEdit("500")
+        self.y_max_slider.setPlaceholderText("Y Max")
+        self.y_max_slider.textChanged.connect(self.update_y_limits)
+        axis_layout.addWidget(self.y_max_slider)
+
+        self.layout.addLayout(axis_layout)
+
         self.notch_filter_checkbox = QCheckBox("50 Hz Notch Filter")
         self.notch_filter_checkbox.setChecked(self.notch_filter_enabled)
         self.notch_filter_checkbox.stateChanged.connect(self.toggle_notch_filter)
@@ -93,6 +121,26 @@ class ECGApp(QMainWindow):
         self.timer.start(
             50
         )  # Set the timer interval to 50 ms (adjust as needed for your data rate)
+
+        self.update_subject("Student")
+
+    def update_x_limits(self):
+        try:
+            x_min = float(self.x_min_slider.text())
+            x_max = float(self.x_max_slider.text())
+            if x_min < x_max:
+                self.plot_widget.setXRange(x_min, x_max)
+        except ValueError:
+            print("Invalid X range values")
+
+    def update_y_limits(self):
+        try:
+            y_min = float(self.y_min_slider.text())
+            y_max = float(self.y_max_slider.text())
+            if y_min < y_max:
+                self.plot_widget.setYRange(y_min, y_max)
+        except ValueError:
+            print("Invalid Y range values")
 
     def start_acquisition(self):
         try:
@@ -110,6 +158,8 @@ class ECGApp(QMainWindow):
         print(f"{datetime.now()}: Stopped data acquisition")
 
     def save_figure(self):
+        import pyqtgraph.exporters
+
         filename, _ = QFileDialog.getSaveFileName(
             self,
             "Save Figure",
@@ -117,7 +167,7 @@ class ECGApp(QMainWindow):
             "PNG Files (*.png);;All Files (*)",
         )
         if filename:
-            exporter = pg.exporters.ImageExporter(self.plot_widget.plotItem)
+            exporter = pyqtgraph.exporters.ImageExporter(self.plot_widget.plotItem)
             exporter.export(filename)
             print(f"{datetime.now()}: Saved figure as {filename}")
 
@@ -126,6 +176,7 @@ class ECGApp(QMainWindow):
 
     def update_subject(self, text):
         self.subject = text
+        self.plot_widget.plotItem.setTitle(f"ECG Viewer - Subject: {self.subject}")
 
     def toggle_notch_filter(self, state):
         self.notch_filter_enabled = state == 2
