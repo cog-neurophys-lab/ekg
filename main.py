@@ -37,7 +37,6 @@ def get_new_data_points(packet_reader: PacketStreamReader):
                 new_data[nDataPoints] = channel_1
                 nDataPoints += 1
 
-
         yield new_data[:nDataPoints]
 
 
@@ -48,6 +47,7 @@ reader: PacketStreamReader | None = PacketStreamReader(serial_port)
 
 sampling_rate = 256.0
 T = 10.0  # seconds to display
+subject: str = "student"
 
 
 # 50 hz notch filter
@@ -88,7 +88,7 @@ ax.grid(True, which="minor", color="k", linestyle="--")
 ax.set_xticks(np.arange(0, T, 0.1), minor=True)
 
 timestamp = datetime.now()
-title = ax.set_title(f"EKG: {timestamp}")
+title = ax.set_title(f"{subject} - EKG: {timestamp}")
 
 nFrames = 0
 
@@ -112,14 +112,14 @@ def update(frame):
     y_data = np.roll(y_data, -len(new_data))
 
     # if check_buttons.get_status()[1]:
-        # y_data = lowpass_filter(y_data, sampling_rate)
+    # y_data = lowpass_filter(y_data, sampling_rate)
 
     if check_buttons.get_status()[0]:
         y_data = notch_filter(y_data, sampling_rate)
 
     timestamp = datetime.now()
     y_data[-len(new_data) :] = new_data
-    title.set_text(f"EKG: {timestamp}")
+    title.set_text(f"{subject} - EKG: {timestamp}")
     line.set_ydata(y_data)
     return (line,)
 
@@ -159,15 +159,29 @@ stop_button.on_clicked(on_stop)
 
 
 # add TextBox to define the COM port
-def on_submit_callback(text):
+def on_comport_submit_callback(text):
     global port
     port = text
+
 
 port_slider_axes = pyplot.axes((0.1, 0.05, 0.025, 0.025))
 port_text_box = TextBox(
     port_slider_axes, "COM Port  ", initial=port, textalignment="center"
 )
-port_text_box.on_submit(on_submit_callback)
+port_text_box.on_submit(on_comport_submit_callback)
+
+
+# add TextBox for Subject
+def on_subject_submit(text):
+    global subject
+    subject = text
+
+
+subject_axes = pyplot.axes((0.25, 0.05, 0.025, 0.025))
+subject_text_box = TextBox(
+    subject_axes, "Subject", initial=subject, textalignment="center"
+)
+subject_text_box.on_submit(on_subject_submit)
 
 
 # add CheckButtons to select filters
@@ -175,25 +189,31 @@ filters = ["50 Hz notch"]
 check_axes = pyplot.axes((0.15, 0.05, 0.08, 0.025))
 check_buttons = CheckButtons(check_axes, filters, [True, False])
 
+
 # add button to save as pdf
 def on_save(event):
-    filename = "ekg_" + timestamp.strftime("%Y%m%d%H%M%S") + ".pdf"
+    filename = f"{subject}_ekg_" + timestamp.strftime("%Y%m%d%H%M%S") + ".pdf"
 
-    filename = asksaveasfilename(title="Pick filename for saving", 
-                                 defaultextension=".pdf", initialfile=filename, 
-                                 filetypes=[('PDF Files', '*.pdf'), 
-                                            ('PNG Files', '*.png'),
-                                            ('All Files', '*.*')])
+    filename = asksaveasfilename(
+        title="Pick filename for saving",
+        defaultextension=".pdf",
+        initialfile=filename,
+        filetypes=[
+            ("PDF Files", "*.pdf"),
+            ("PNG Files", "*.png"),
+            ("All Files", "*.*"),
+        ],
+    )
     if filename is not None or filename != "":
         pyplot.savefig(filename)
         print(f"{datetime.now()}: Saved figure as {filename}")
+
 
 save_button_axes = pyplot.axes((0.7, 0.05, 0.08, 0.075))
 save_button = pyplot.Button(save_button_axes, "Save figure")
 save_button.on_clicked(on_save)
 
 print(f"{datetime.now()}: Started EKG")
-
 
 
 pyplot.show()
