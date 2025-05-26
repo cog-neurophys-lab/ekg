@@ -22,6 +22,10 @@ import scipy.signal
 import serial
 from PySide6.QtWidgets import QHBoxLayout
 
+## Switch to using white background and black foreground
+pg.setConfigOption("background", "w")
+pg.setConfigOption("foreground", "k")
+
 
 class ECGApp(QMainWindow):
     def __init__(self):
@@ -50,8 +54,9 @@ class ECGApp(QMainWindow):
         self.plot_widget = PlotWidget()
         self.layout.addWidget(self.plot_widget)
         self.plot = self.plot_widget.plot(
-            self.x_data, self.y_data, pen=mkPen("w", width=2)
+            self.x_data, self.y_data, pen=mkPen("k", width=2)
         )
+        self.plot_widget.showGrid(x=True, y=True)
         self.plot_widget.setLabel("left", "Amplitude")
         self.plot_widget.setLabel("bottom", "Time (s)")
         self.plot_widget.setYRange(-500, 500)
