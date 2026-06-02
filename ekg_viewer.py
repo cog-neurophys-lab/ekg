@@ -160,16 +160,34 @@ class ECGApp(QMainWindow):
     def save_figure(self):
         import pyqtgraph.exporters
 
-        filename, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save Figure",
-            f"{self.subject}_ekg_{datetime.now().strftime('%Y%m%d%H%M%S')}.png",
-            "PNG Files (*.png);;All Files (*)",
-        )
-        if filename:
+        dialog = QFileDialog(self, "Save Figure")
+        dialog.setAcceptMode(QFileDialog.AcceptSave)
+        dialog.setNameFilters(["PNG Files (*.png)", "JPEG Files (*.jpg)", "PDF Files (*.pdf)"])
+        dialog.selectFile(f"{self.subject}_ekg_{datetime.now().strftime('%Y%m%d%H%M%S')}")
+
+        filter_to_suffix = {"PNG Files (*.png)": "png", "JPEG Files (*.jpg)": "jpg", "PDF Files (*.pdf)": "pdf"}
+        dialog.filterSelected.connect(lambda f: dialog.setDefaultSuffix(filter_to_suffix.get(f, "")))
+        dialog.setDefaultSuffix("png")
+
+        if not dialog.exec():
+            return
+        filename = dialog.selectedFiles()[0]
+
+        if filename.lower().endswith(".pdf"):
+            from PySide6.QtGui import QPainter
+            from PySide6.QtPrintSupport import QPrinter
+
+            printer = QPrinter(QPrinter.HighResolution)
+            printer.setOutputFormat(QPrinter.PdfFormat)
+            printer.setOutputFileName(filename)
+            painter = QPainter(printer)
+            self.plot_widget.render(painter)
+            painter.end()
+        else:
             exporter = pyqtgraph.exporters.ImageExporter(self.plot_widget.plotItem)
             exporter.export(filename)
-            print(f"{datetime.now()}: Saved figure as {filename}")
+
+        print(f"{datetime.now()}: Saved figure as {filename}")
 
     def update_com_port(self, text):
         self.port = text
