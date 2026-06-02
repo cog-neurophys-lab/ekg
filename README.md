@@ -8,7 +8,7 @@ via a USB serial connection.
 
 The EKG Stream Viewer is free and open source, licensed under the MIT license. It uses code from Paul Logston's [olimex-ekg-emg](https://github.com/logston/olimex-ekg-emg) (see [LICENSE](olimex/LICENSE)).
 
-Dependencies are listed in [`requirements.txt`](requirements.txt) and include the standard scientific stack of NumPy, SciPy and Matplotlib.
+Dependencies are listed in [`pyproject.toml`](pyproject.toml) and include the standard scientific stack of NumPy, SciPy and Matplotlib.
 
 
 ## Get started
@@ -18,9 +18,6 @@ Download a [(currently only Windows) release](https://github.com/cog-neurophys-l
 ## Create binary for deployment
 
 ```
-python -m venv .env
-.env\Scripts\activate.bat
-python -m pip install requirements.txt
-python -m pip install pyinstaller
-pyinstaller --console --version-file file_version_info.txt --onefile --name ekg main.py --hidden-import matplotlib.backends.backend_pdf
+uv sync --group dev
+uv run pyinstaller --console --version-file file_version_info.txt --onefile --name ekg ekg_viewer.py --hidden-import matplotlib.backends.backend_pdf
 ```
